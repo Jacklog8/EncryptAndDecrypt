@@ -13,11 +13,33 @@ namespace encrypt
             if (path == "")
                 return;
 
+            bool isFile;
+            if (File.Exists(path))
+                isFile = true;
+            else isFile = false;
+
             byte[] key = GenerateKey();
-            EncryptFile(path, key);
+            if(isFile)
+                EncryptFile(path, key);
+            else
+            {
+                List<string> files = GetFiles(path);
+                foreach(string file in files)
+                {
+                    try
+                    {
+                        EncryptFile(file, key);
+                    }
+                    catch(Exception) { Console.WriteLine($"File {file} is protected and cannot be encrypted..."); }
+                }
+            }
             Console.WriteLine("Writing key file...");
-            File.WriteAllText(Directory.GetParent(path)+"\\key.txt", Convert.ToBase64String(key));
-            Console.WriteLine($"Key can be found at \"{Directory.GetParent(path) + "\\key.txt"}\"");
+            string keyPath;
+            if (isFile)
+                keyPath = Directory.GetParent(path) + "\\key.txt";
+            else keyPath = path + "\\key.txt";
+            File.WriteAllText(keyPath, Convert.ToBase64String(key));
+            Console.WriteLine($"Key can be found at \"{keyPath}\"");
         }
 
         static string GetPath(string[] args)
@@ -25,18 +47,40 @@ namespace encrypt
             string path = "";
             if (args.Length != 1)
             {
-                Console.WriteLine("Please enter in the file to encrypt:\n    encrypt <file path>");
+                Console.WriteLine("Please enter in the file or directory to encrypt:\n    encrypt <file path>");
                 return path;
             }
-            if (File.Exists(args[0].Replace("_", " ")))
+            if (File.Exists(args[0].Replace("_", " ")) || Directory.Exists(args[0].Replace("_", " ")))
                 path = args[0].Replace("_", " ");
             else path = Directory.GetCurrentDirectory() + "\\" + args[0].Replace("_", " ");
-            if (!File.Exists(path))
+            if (!File.Exists(path) && !Directory.Exists(path))
             {
-                Console.WriteLine($"Could not find either file:\n    {Directory.GetCurrentDirectory() + "\\" + args[0].Replace("_", " ")}\n    {args[0].Replace("_", " ")}");
+                Console.WriteLine($"Could not find either file or directory:\n    {Directory.GetCurrentDirectory() + "\\" + args[0].Replace("_", " ")}\n    {args[0].Replace("_", " ")}");
                 path = "";
             }
             return path;
+        }
+
+        static List<string> GetFiles(string path)
+        {
+            var files = new List<string>();
+            var directories = new string[] { };
+
+            try
+            {
+                files.AddRange(Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly));
+                directories = Directory.GetDirectories(path);
+            }
+            catch (UnauthorizedAccessException) { }
+
+            foreach (var directory in directories)
+                try
+                {
+                    files.AddRange(GetFiles(directory));
+                }
+                catch (UnauthorizedAccessException) { }
+
+            return files;
         }
 
         static byte[] GenerateKey()

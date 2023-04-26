@@ -51,6 +51,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy C:\Users\Jack\source\repos\EvilStuff\decrypt\bin\Debug\ X:\Documents\encryption /E /H /y</PostBuildEvent>
+    <PostBuildEvent>xcopy C:\Users\Jack\source\repos\EvilStuff\EncryptAndDecrypt\decrypt\bin\Debug\ X:\Documents\encryption /E /H /y</PostBuildEvent>
   </PropertyGroup>
 </Project>
